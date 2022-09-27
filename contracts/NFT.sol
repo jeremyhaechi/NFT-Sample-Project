@@ -19,7 +19,7 @@ contract NFT is Ownable, ERC721("OurNFT", "ONFT") {
     using Counters for Counters.Counter;
 
     string defaultURI;
-    uint256 timeoutDeadline;
+    uint256 public timeoutDeadline;
 
     Counters.Counter public currentTokenID;
     mapping(uint256 => TokenMetadata) public metadataOwnership;
@@ -27,6 +27,7 @@ contract NFT is Ownable, ERC721("OurNFT", "ONFT") {
 
     event tokenMinted(address owner, address recipient, uint256 tokenID);
     event tokenBurned(address tokenOwner, uint256 tokenID);
+    event tokenTransferred(address from, address to, uint256 tokenID);
     event Revealed(uint256 tokenID);
 
     constructor(string memory _defaultURI) payable {
@@ -49,7 +50,8 @@ contract NFT is Ownable, ERC721("OurNFT", "ONFT") {
         metadata.tokenID = currentToken;
         metadata.owner = recipient;
         metadata.base = "";
-        metadata.tokenURI = defaultURI;
+        // need to replace tokenURI to random generate URI
+        metadata.tokenURI = "AAAA";
         metadata.isRevealed = false;
 
         balances[recipient] += 1;
@@ -67,6 +69,8 @@ contract NFT is Ownable, ERC721("OurNFT", "ONFT") {
         if (tokenOwner == address(msg.sender)) {
             _burn(tokenID);
             balances[tokenOwner] -= 1;          // Warning : Underflow
+            delete metadataOwnership[tokenID];
+
             emit tokenBurned(tokenOwner, tokenID);
         }
         return true;
@@ -81,6 +85,14 @@ contract NFT is Ownable, ERC721("OurNFT", "ONFT") {
 
         require(_isApprovedOrOwner(msg.sender, tokenID) && metaData.owner == address(from), "This token is not from user");
         _transfer(from, to, tokenID);
+
+        balances[from] -= 1;
+        balances[to] += 1;
+
+        TokenMetadata storage metadata = metadataOwnership[tokenID];
+        metadata.owner = to;
+
+        emit tokenTransferred(from, to, tokenID);
     }
 
     function tokenURI(uint256 tokenId) override public view returns (string memory) {
@@ -104,5 +116,10 @@ contract NFT is Ownable, ERC721("OurNFT", "ONFT") {
 
         emit Revealed(tokenID);
         return true;
+    }
+
+    // For debugging
+    function getCurrentTimestamp() external view returns (uint256) {
+        return uint256(block.timestamp);
     }
 }
