@@ -21,12 +21,13 @@ contract NFT is Ownable, ERC721("OurNFT", "ONFT") {
     string defaultURI;
     uint256 timeoutDeadline;
 
-    Counters.Counter currentTokenID;
+    Counters.Counter public currentTokenID;
     mapping(uint256 => TokenMetadata) public metadataOwnership;
     mapping(address => uint256) public balances;
 
     event tokenMinted(address owner, address recipient, uint256 tokenID);
     event tokenBurned(address tokenOwner, uint256 tokenID);
+    event Revealed(uint256 tokenID);
 
     constructor(string memory _defaultURI) payable {
         defaultURI = _defaultURI;
@@ -40,11 +41,19 @@ contract NFT is Ownable, ERC721("OurNFT", "ONFT") {
             return false;
         }
         // require(owner() != address(msg.sender), "Only owner can execute this minting function");
-        _safeMint(recipient, currentTokenID.current());
+        uint256 currentToken = currentTokenID.current();
+        _safeMint(recipient, currentToken);
         currentTokenID.increment();
 
+        TokenMetadata storage metadata = metadataOwnership[currentToken];
+        metadata.tokenID = currentToken;
+        metadata.owner = recipient;
+        metadata.base = "";
+        metadata.tokenURI = defaultURI;
+        metadata.isRevealed = false;
+
         balances[recipient] += 1;
-        emit tokenMinted(msg.sender, recipient, currentTokenID.current());
+        emit tokenMinted(msg.sender, recipient, currentToken);
 
         return true;
     }
@@ -93,6 +102,7 @@ contract NFT is Ownable, ERC721("OurNFT", "ONFT") {
         metaData.isRevealed = true;
         metaData.base = revealedURI;
 
+        emit Revealed(tokenID);
         return true;
     }
 }
