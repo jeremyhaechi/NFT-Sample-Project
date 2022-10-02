@@ -4,8 +4,9 @@ pragma solidity 0.8.17;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-
 import "@openzeppelin/contracts/utils/Counters.sol";
+
+import "./lib/DiseaseMetadata.sol";
 
 struct TokenMetadata {
     uint tokenID;
@@ -13,10 +14,14 @@ struct TokenMetadata {
     string base;
     string tokenURI;
     bool isRevealed;
+    uint256 minting;
+    BagForVaccine vaccines;
 }
 
 contract NFT is Ownable, ERC721("OurNFT", "ONFT") {
     using Counters for Counters.Counter;
+
+    address metadataGenerator;
 
     string defaultURI;
     uint256 public timeoutDeadline;
@@ -30,10 +35,18 @@ contract NFT is Ownable, ERC721("OurNFT", "ONFT") {
     event tokenTransferred(address from, address to, uint256 tokenID);
     event Revealed(uint256 tokenID);
 
+    // Owner event
+    event MetadataChanged(address metadata);
+
     constructor(string memory _defaultURI) payable {
         defaultURI = _defaultURI;
         // Deadline duration : 7 days
         timeoutDeadline = uint256(block.timestamp + 7 days);
+    }
+
+    function setMetadataGeneratorAddress(address metadata) external onlyOwner {
+        metadataGenerator = metadata;
+        emit MetadataChanged(metadataGenerator);
     }
 
     function mint(address recipient) external returns (bool) {
@@ -53,6 +66,7 @@ contract NFT is Ownable, ERC721("OurNFT", "ONFT") {
         // need to replace tokenURI to random generate URI
         metadata.tokenURI = "AAAA";
         metadata.isRevealed = false;
+        metadata.minting = currentToken;
 
         balances[recipient] += 1;
         emit tokenMinted(msg.sender, recipient, currentToken);
@@ -113,6 +127,7 @@ contract NFT is Ownable, ERC721("OurNFT", "ONFT") {
         TokenMetadata storage metaData = metadataOwnership[tokenID];
         metaData.isRevealed = true;
         metaData.base = revealedURI;
+        metaData.vaccines = DiseaseMetadata(metadataGenerator).getBagsForVaccination(metaData.minting);
 
         emit Revealed(tokenID);
         return true;
