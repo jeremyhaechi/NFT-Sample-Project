@@ -34,7 +34,7 @@ contract DiseaseMetadata {
 
     function getRandomDisease(uint256 mintNumber) public view returns (string memory) {
         uint8 randNumber = uint8(getRandomNumber(mintNumber) % 10);
-        uint8 randNumberInside = uint8(getRandomNumber(mintNumber * mintNumber) % InfectionLevel3.length);
+        uint8 randNumberInside = uint8(getRandomNumber(mintNumber) % InfectionLevel3.length);
 
         // randNumber >= 9 : InfectionLevel1
         // 6 <= randNumber <= 8 : InfectionLevel2
@@ -58,6 +58,7 @@ contract DiseaseMetadata {
 
         for(uint i = 0; i < 5; i++) {
             newBag.vaccines[i] = getRandomDisease(mintNumber);
+            mintNumber = getRandomNumber(mintNumber);
         }
 
         return newBag;
