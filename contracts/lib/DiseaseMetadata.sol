@@ -3,7 +3,7 @@
 pragma solidity 0.8.17;
 
 struct BagForVaccine {
-    string[] vaccines;
+    string[5] vaccines;
 }
 
 contract DiseaseMetadata {

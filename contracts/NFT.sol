@@ -121,6 +121,15 @@ contract NFT is Ownable, ERC721("OurNFT", "ONFT") {
         }
     }
 
+    function getTokenMetadata(uint256 tokenId) public view returns (string[5] memory) {
+        TokenMetadata storage metaData = metadataOwnership[tokenId];
+
+        require(metaData.isRevealed, "Not revealed");
+        string[5] memory result = metaData.vaccines.vaccines;
+
+        return result;     
+    }
+
     function reveal(uint256 tokenID, string memory revealedURI) external returns (bool) {
         require(currentTokenID.current() >= 10000 || block.timestamp >= timeoutDeadline, "Can't reveal yet");
         

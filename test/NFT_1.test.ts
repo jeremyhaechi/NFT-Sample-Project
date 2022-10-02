@@ -87,4 +87,30 @@ describe.only("NFT Testing (1st testing)", function () {
         const tokenURIAfter = await NFT.connect(user1).tokenURI(mintedToken);
         expect(tokenURIAfter).not.to.equal(tokenURIBefore);
     });
+
+    it.only("Minting with metadata testing", async function () {
+        // Deploying metadata contract
+        let DiseaseMetadataFactory = await ethers.getContractFactory('DiseaseMetadata');
+        let DiseaseMetadata = await DiseaseMetadataFactory.deploy();
+
+        await DiseaseMetadata.deployed();
+        await NFT.setMetadataGeneratorAddress(DiseaseMetadata.address);
+
+        // Minting Test
+        let tx = await NFT.mint(user1.getAddress());
+        let result = await tx.wait();
+        const mintedToken = result.events[0].args.tokenId;
+
+        const tokenURIBefore = await NFT.connect(user1).tokenURI(mintedToken);
+        expect(tokenURIBefore).to.equal("https://defaultdefaultURI.com/AAAA");
+
+        const timeoutDeadline = ethers.BigNumber.from(await NFT.timeoutDeadline()).toNumber();
+        await ethers.provider.send("evm_mine", [timeoutDeadline + 60 * 60 * 24 * 10]);
+        await expect(NFT.connect(user1).reveal(mintedToken, "https://newURI.com")).to.be.emit(NFT, "Revealed");
+        const tokenURIAfter = await NFT.connect(user1).tokenURI(mintedToken);
+        expect(tokenURIAfter).not.to.equal(tokenURIBefore);
+
+        const vaccines = await NFT.getTokenMetadata(mintedToken);
+        console.log(vaccines);
+    })
 });
